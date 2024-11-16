@@ -1,0 +1,130 @@
+program gauss_seidel
+
+ implicit none
+ integer :: i, j, k, n, m, z, f, xmin, xmax
+ real :: delta, epsilon, length, sum, hx, tiempo, ht, t
+ real, allocatable, dimension(:) :: w, w0
+ real, allocatable, dimension(:,:) :: a
+
+
+open(100, file = "input_data.inp")
+open(101, file = "coefficients.inp")
+open(102, file = "initial_approx.inp") 
+
+read(100, *) 
+read(100, *)n, m, epsilon
+
+allocate(w(0:m), w0(1:m-1), a(1:m-1, 1:m))
+
+do i = 1, m-1 
+read(101,*)a(i,:)   
+        end do
+
+
+read(102,*)w0(:)
+
+close(100)
+close(101)
+close(102) 
+
+hx = 0.1
+ht = 0.0005
+
+!condiciones de frontera 
+w(0) = 0.0
+w(m) = 0.0
+
+
+
+do z = 0, 1000
+        t = 1.0  + z * ht
+
+        if(t == 1.0)then
+                do i = 1, m-1
+                         a(i,m) = fun(i)    !Primer paso en el tiempo con las condiciones iniciales u(x,0) sen(pix)                         
+                 end do
+                
+                 call gauss
+                do i = 0, m
+        write(200,*)i,w(i)
+                 end do 
+         else  
+                 call gauss
+
+                do i = 0, m
+          write(200+z,*)i,w(i)
+               end do
+        end if
+
+end do
+
+open(200, file= "soluciones.out")
+do i = 0, m                                   !Escritura de las soluciones 
+write(200,*)"w", i, w(i) 
+end do 
+close(200)
+
+
+
+
+!***********************************************************************************************************************
+contains 
+
+
+!-----------------------------------------------------------------------------------------------------------------------
+subroutine gauss
+k = 1 
+do while (k <= n)
+delta = 0.0 
+length = 0.0
+        do i = 1, m-1 
+                sum = 0.0
+                        do j = 1, m-1
+                            if(j <= i-1)then
+                                sum = sum + a(i,j)*w(j)
+                        elseif (j >i)then
+                                sum = sum + a(i,j)*w0(j) 
+                        end if
+                        end do
+         
+                   w(i) = a(i,m)/a(i,i) - sum/a(i,i) 
+                   delta = delta + (w(i)-w0(i))**2
+                   length = length + w(i)**2
+                  
+         end do 
+
+         delta = sqrt(delta)/sqrt(length) 
+          if(delta < epsilon)then
+          !        write(*,*)"exito en el tiempo", real(t) 
+
+                  do i = 1, m-1
+                  a(i,m) = w(i)
+                  end do
+
+                        exit               
+          else
+                  do i = 1, m-1
+                 w0(i) = w(i) 
+                  end do
+         end if  
+
+    k = k + 1
+ end do
+
+ end subroutine gauss
+ !-------------------------------------------------------------------------------------------------------------------
+
+
+function fun(i) result(y)
+
+        implicit none
+        integer :: i
+        real :: y
+        real, parameter :: pi = 3.141592653
+        
+        y = sin(pi * i * hx)
+
+end function fun
+
+
+end program gauss_seidel 
